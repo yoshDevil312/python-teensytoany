@@ -626,10 +626,10 @@ class TeensyToAny:
         cmd = f"i2c_write 0x{address:02x} {data_str}"
         self._ask(cmd)
 
-    def i2c_end_transaction(self, address: int):
+    def i2c_end_transaction(self):
         """End a transaction with the I2C device. This is required after writing or
         reading data."""
-        cmd = "i2c_end_transaction 0x{address:02x}"
+        cmd = "i2c_end_transaction"
         self._ask(cmd)
 
     def i2c_1_init(self, baud_rate: int = 100_100, timeout=200_000, register_space=1):
@@ -751,10 +751,10 @@ class TeensyToAny:
         cmd = f"i2c_1_write 0x{address:02x} {data_str}"
         self._ask(cmd)
 
-    def i2c_1_end_transaction(self, address: int):
+    def i2c_1_end_transaction(self):
         """End a transaction with the I2C device. This is required after writing or
         reading data."""
-        cmd = "i2c_1_end_transaction 0x{address:02x}"
+        cmd = "i2c_1_end_transaction"
         self._ask(cmd)
 
     def gpio_digital_write(self, pin, value):
