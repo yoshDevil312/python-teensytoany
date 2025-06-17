@@ -9,7 +9,7 @@ from packaging.version import Version
 from serial import LF, Serial
 from serial.tools.list_ports import comports
 
-__all__ = ['TeensyToAny']
+__all__ = ["TeensyToAny"]
 
 
 class TeensyToAny:
@@ -52,8 +52,7 @@ class TeensyToAny:
         computer but that may not be associated with the TeensyToAny boards.
 
         """
-        pairs = TeensyToAny.device_serial_number_pairs(
-            serial_numbers=serial_numbers)
+        pairs = TeensyToAny.device_serial_number_pairs(serial_numbers=serial_numbers)
         devices, _ = zip(*pairs)
         return devices
 
@@ -94,7 +93,7 @@ class TeensyToAny:
 
     @staticmethod
     def get_latest_available_firmware_version(
-        *, mcu='TEENSY40', online=True, local=True, timeout=2
+        *, mcu="TEENSY40", online=True, local=True, timeout=2
     ):
         latest = None
         if local:
@@ -129,7 +128,8 @@ class TeensyToAny:
         if response.status_code != 200:
             raise RuntimeError(
                 "Failed to fetch the latest release information. "
-                f"Status code: {response.status_code}")
+                f"Status code: {response.status_code}"
+            )
         release_data = response.json()
         latest_release_version = release_data["tag_name"]
 
@@ -166,21 +166,25 @@ class TeensyToAny:
         pairs = [
             (c.device, c.serial_number)
             for c in com
-            if ((c.vid, c.pid) in TeensyToAny.VID_PID_s and
-                ((serial_numbers is None and c.manufacturer == manufacturer) or
-                 (serial_numbers and c.serial_number in serial_numbers)))
+            if (
+                (c.vid, c.pid) in TeensyToAny.VID_PID_s
+                and (
+                    (serial_numbers is None and c.manufacturer == manufacturer)
+                    or (serial_numbers and c.serial_number in serial_numbers)
+                )
+            )
         ]
         if len(pairs) == 0:
-            raise RuntimeError(
-                f"Could not find any {device_name} device."
-            )
+            raise RuntimeError(f"Could not find any {device_name} device.")
         return pairs
 
     @property
     def mcu(self):
-        return self._ask('mcu')
+        return self._ask("mcu")
 
-    def _update_firmware(self, *, mcu=None, variant: str=None, force=False, timeout=2):
+    def _update_firmware(
+        self, *, mcu=None, variant: str = None, force=False, timeout=2
+    ):
         current_version = self.version
         serial_number = self.serial_number
         if mcu is None:
@@ -189,9 +193,12 @@ class TeensyToAny:
         if mcu is None:
             raise RuntimeError(
                 "The current microcontroller is unknown, please specify it "
-                "before attempting to update the firmware.")
+                "before attempting to update the firmware."
+            )
 
-        latest_version = self.get_latest_available_firmware_version(mcu=mcu, timeout=timeout)
+        latest_version = self.get_latest_available_firmware_version(
+            mcu=mcu, timeout=timeout
+        )
         if not force:
             if Version(current_version) >= Version(latest_version):
                 return
@@ -204,7 +211,7 @@ class TeensyToAny:
                 mcu=mcu,
                 version=latest_version,
                 variant=variant,
-                timeout=timeout
+                timeout=timeout,
             )
             # Reraise any exceptions that were caught
         finally:
@@ -219,14 +226,14 @@ class TeensyToAny:
         versions = [
             d.name
             for d in firmware_dir.iterdir()
-            if d.is_dir() and (d / 'firmware.hex').is_file()
+            if d.is_dir() and (d / "firmware.hex").is_file()
         ]
 
         versions.sort(key=Version)
         return versions
 
     @staticmethod
-    def _generate_firmware_filename(*, mcu, version, variant: str=None):
+    def _generate_firmware_filename(*, mcu, version, variant: str = None):
         firmware_dir = TeensyToAny._generate_firmware_directory(mcu=mcu)
         if variant is None:
             firmware_filename = firmware_dir / f"{version}" / "firmware.hex"
@@ -239,7 +246,8 @@ class TeensyToAny:
         from pathlib import Path  # pylint: disable=import-outside-toplevel
 
         from appdirs import AppDirs  # pylint: disable=import-outside-toplevel
-        app = AppDirs('teensytoany', 'ramonaoptics')
+
+        app = AppDirs("teensytoany", "ramonaoptics")
         cache_dir = Path(app.user_cache_dir)
         cache_dir.mkdir(parents=True, exist_ok=True)
         firmware_dir = cache_dir / f"{mcu.lower()}"
@@ -247,14 +255,13 @@ class TeensyToAny:
         return firmware_dir
 
     @staticmethod
-    def download_firmware(*, mcu, version, variant: str=None, timeout=2):
+    def download_firmware(*, mcu, version, variant: str = None, timeout=2):
         firmware_filename = TeensyToAny._generate_firmware_filename(
-            mcu=mcu,
-            version=version,
-            variant=variant
+            mcu=mcu, version=version, variant=variant
         )
 
         import requests  # pylint: disable=import-outside-toplevel
+
         release_url = f"https://github.com/ramonaoptics/teensy-to-any/releases/download/{version}/"
         if variant is None:
             file_url = release_url + f"firmware_{mcu.lower()}.hex"
@@ -266,7 +273,7 @@ class TeensyToAny:
 
         firmware_filename.parent.mkdir(parents=True, exist_ok=True)
         # Open the file for binary writing
-        with open(firmware_filename, 'wb') as file:
+        with open(firmware_filename, "wb") as file:
             # Write the content to the file in chunks
             for chunk in response.iter_content(chunk_size=4096):
                 file.write(chunk)
@@ -279,7 +286,7 @@ class TeensyToAny:
         *,
         mcu=None,
         version=None,
-        variant: str=None,
+        variant: str = None,
         verbose=False,
         wait=False,
         timeout=2,
@@ -301,42 +308,48 @@ class TeensyToAny:
         if version is None:
             version = TeensyToAny.get_latest_available_firmware_version(timeout=timeout)
 
-        if os.name == 'nt':
+        if os.name == "nt":
             # We do supporting updating, but it is "scary" to do so since
             # there is no serial number specificity
-            raise RuntimeError("We do not supporting programing TeensyToAny devices on Windows")
+            raise RuntimeError(
+                "We do not supporting programing TeensyToAny devices on Windows"
+            )
 
         firmware_filename = TeensyToAny._generate_firmware_filename(
-            mcu=mcu,
-            version=version,
-            variant=variant
+            mcu=mcu, version=version, variant=variant
         )
 
         if not firmware_filename.is_file():
             TeensyToAny.download_firmware(
-                mcu=mcu,
-                version=version,
-                variant=variant,
-                timeout=timeout
+                mcu=mcu, version=version, variant=variant, timeout=timeout
             )
 
         if verbose:
-            verbose = ['-v',]
+            verbose = [
+                "-v",
+            ]
         else:
             verbose = []
 
         if wait:
-            wait = ['-w',]
+            wait = [
+                "-w",
+            ]
         else:
             wait = []
-        cmd_list = [
-            'teensy_loader_cli',
-            '-s',
-        ] + verbose + wait + [
-            f'--mcu={mcu}',
-            f'--serial-number={serial_number}',
-            str(firmware_filename),
-        ]
+        cmd_list = (
+            [
+                "teensy_loader_cli",
+                "-s",
+            ]
+            + verbose
+            + wait
+            + [
+                f"--mcu={mcu}",
+                f"--serial-number={serial_number}",
+                str(firmware_filename),
+            ]
+        )
 
         subprocess.check_call(cmd_list)
         # Wait for the device to reboot
@@ -344,7 +357,8 @@ class TeensyToAny:
 
     def __init__(
         self,
-        serial_number=None, *,
+        serial_number=None,
+        *,
         baudrate=115200,
         timeout=0.205,
         open=True,  # pylint: disable=redefined-builtin
@@ -397,10 +411,10 @@ class TeensyToAny:
             serial_numbers = [self._requested_serial_number]
 
         port, found_serial_number = self.device_serial_number_pairs(
-            serial_numbers=serial_numbers, device_name=self._device_name)[0]
+            serial_numbers=serial_numbers, device_name=self._device_name
+        )[0]
 
-        self._serial = Serial(
-            port=port, baudrate=self._baudrate, timeout=self._timeout)
+        self._serial = Serial(port=port, baudrate=self._baudrate, timeout=self._timeout)
         self.serial_number = found_serial_number
 
         # Ignore other commands that might be pending?
@@ -445,7 +459,7 @@ class TeensyToAny:
             raise RuntimeError("Device must be opened first")
 
         if isinstance(data, str):
-            data = (data + '\n').encode('utf-8')
+            data = (data + "\n").encode("utf-8")
         self._serial.write(data)
 
     def _read(self, *, size=1024, decode=True) -> str:
@@ -473,7 +487,7 @@ class TeensyToAny:
         if len(returned) == 0:
             raise RuntimeError(f"Failed to read a response for command: {data}")
 
-        returned_list = returned.split(' ', 1)
+        returned_list = returned.split(" ", 1)
         error = returned_list[0]
         message = None if len(returned_list) == 1 else returned_list[1]
         error = int(error)
@@ -486,7 +500,7 @@ class TeensyToAny:
             message = message.strip()
         return message
 
-    def i2c_init(self, baud_rate: int=100_100, timeout=200_000, register_space=1):
+    def i2c_init(self, baud_rate: int = 100_100, timeout=200_000, register_space=1):
         cmd = f"i2c_init {baud_rate:d} {timeout:d} {register_space:d}"
         self._ask(cmd)
 
@@ -510,33 +524,32 @@ class TeensyToAny:
         cmd = f"i2c_write_uint16 0x{address:02x} 0x{register_address:x} 0x{data:x}"
         self._ask(cmd)
 
-    def i2c_write_read(self,
-                       address: int,
-                       data: Sequence,
-                       num_bytes: int) -> Sequence:
+    def i2c_write_read(self, address: int, data: Sequence, num_bytes: int) -> Sequence:
         if len(data) != 2:
             raise ValueError("data must be of length 2")
         if num_bytes not in [1, 2]:
             raise ValueError("Can only read 1 or 2 bytes at a time.")
 
-        register_address = int.from_bytes(
-            data, byteorder='big', signed=False)
+        register_address = int.from_bytes(data, byteorder="big", signed=False)
         if num_bytes == 2:
             returned = self._ask(
-                f"i2c_read_uint16 0x{address:02x} 0x{register_address:04x}")
+                f"i2c_read_uint16 0x{address:02x} 0x{register_address:04x}"
+            )
         else:
             returned = self._ask(
-                f"i2c_read_uint8 0x{address:02x} 0x{register_address:04x}")
+                f"i2c_read_uint8 0x{address:02x} 0x{register_address:04x}"
+            )
         register_data = int(returned, base=0)
         # The other I2C function has this interface
         return int.to_bytes(
-            int(register_data),
-            length=num_bytes, byteorder='big',
-            signed=False)
+            int(register_data), length=num_bytes, byteorder="big", signed=False
+        )
 
-    def i2c_write_payload(self, address: int, register_address: int, payload: Sequence) -> None:
+    def i2c_write_payload(
+        self, address: int, register_address: int, payload: Sequence
+    ) -> None:
         if Version(self.version) >= Version("0.0.14"):
-            data = ' '.join([f"0x{val:02x}" for val in payload])
+            data = " ".join([f"0x{val:02x}" for val in payload])
             cmd = f"i2c_write_payload 0x{address:02x} 0x{register_address:02x} {data}"
             self._ask(cmd)
 
@@ -544,48 +557,54 @@ class TeensyToAny:
             if len(payload) == 1:
                 # Trying to write the network chips
                 data = int(payload[0])
-                self._ask(
-                    f"i2c_write_no_register_uint8 0x{address:02x} 0x{data:02x}")
+                self._ask(f"i2c_write_no_register_uint8 0x{address:02x} 0x{data:02x}")
             elif len(payload) == 3:
                 # uint8
                 register_address = int.from_bytes(
-                    payload[0:2], byteorder='big', signed=False)
-                data = int.from_bytes(
-                    payload[2:3], byteorder='big', signed=False)
+                    payload[0:2], byteorder="big", signed=False
+                )
+                data = int.from_bytes(payload[2:3], byteorder="big", signed=False)
                 self._ask(
                     f"i2c_write_uint8 "
-                    f"0x{address:02x} 0x{register_address:04x} 0x{data:02x}")
+                    f"0x{address:02x} 0x{register_address:04x} 0x{data:02x}"
+                )
             elif len(payload) == 4:
                 register_address = int.from_bytes(
-                    payload[0:2], byteorder='big', signed=False)
-                data = int.from_bytes(
-                    payload[2:4], byteorder='big', signed=False)
+                    payload[0:2], byteorder="big", signed=False
+                )
+                data = int.from_bytes(payload[2:4], byteorder="big", signed=False)
                 self._ask(
                     f"i2c_write_uint16 "
-                    f"0x{address:02x} 0x{register_address:04x} 0x{data:04x}")
+                    f"0x{address:02x} 0x{register_address:04x} 0x{data:04x}"
+                )
             else:
                 raise NotImplementedError()
 
-    def i2c_read_payload(self, address: int, register_address: int, num_bytes: int) -> Sequence:
+    def i2c_read_payload(
+        self, address: int, register_address: int, num_bytes: int
+    ) -> Sequence:
         if Version(self.version) < Version("0.0.14"):
             if num_bytes != 1:
                 raise NotImplementedError()
             returned = self._ask(f"i2c_read_no_register_uint8 0x{address:02x}")
             register_data = int(returned, base=0)
             return int.to_bytes(
-                int(register_data),
-                length=num_bytes, byteorder='big',
-                signed=False)
+                int(register_data), length=num_bytes, byteorder="big", signed=False
+            )
 
         cmd = f"i2c_read_payload 0x{address:02x} 0x{register_address:02x} {num_bytes}"
         returned = self._ask(cmd)
-        register_data = [int(val, base=0) for val in returned.split()]  # returns big endian
+        register_data = [
+            int(val, base=0) for val in returned.split()
+        ]  # returns big endian
         return register_data
 
     def i2c_read_payload_no_register(self, address: int, num_bytes: int):
         cmd = f"i2c_read_payload_no_register 0x{address:02x} {num_bytes}"
         returned = self._ask(cmd)
-        register_data = [int(val, base=0) for val in returned.split()]  # returns big endian
+        register_data = [
+            int(val, base=0) for val in returned.split()
+        ]  # returns big endian
         return register_data
 
     def i2c_ping(self, address: int):
@@ -593,7 +612,27 @@ class TeensyToAny:
         cmd = f"i2c_ping 0x{address:02x}"
         self._ask(cmd)
 
-    def i2c_1_init(self, baud_rate: int=100_100, timeout=200_000, register_space=1):
+    def i2c_begin_transaction(self):
+        """Begin a transaction with the I2C device. This is required before writing or
+        reading data."""
+        cmd = "i2c_begin_transaction"
+        self._ask(cmd)
+
+    def i2c_write(self, address: int, data: Sequence) -> None:
+        """Write data to the I2C device."""
+        if not isinstance(data, Sequence):
+            raise TypeError("data must be a sequence of integers")
+        data_str = " ".join([f"0x{val:02x}" for val in data])
+        cmd = f"i2c_write 0x{address:02x} {data_str}"
+        self._ask(cmd)
+
+    def i2c_end_transaction(self):
+        """End a transaction with the I2C device. This is required after writing or
+        reading data."""
+        cmd = "i2c_end_transaction"
+        self._ask(cmd)
+
+    def i2c_1_init(self, baud_rate: int = 100_100, timeout=200_000, register_space=1):
         cmd = f"i2c_1_init {baud_rate:d} {timeout:d} {register_space:d}"
         self._ask(cmd)
 
@@ -617,33 +656,34 @@ class TeensyToAny:
         cmd = f"i2c_1_write_uint16 0x{address:02x} 0x{register_address:x} 0x{data:x}"
         self._ask(cmd)
 
-    def i2c_1_write_read(self,
-                         address: int,
-                         data: Sequence,
-                         num_bytes: int) -> Sequence:
+    def i2c_1_write_read(
+        self, address: int, data: Sequence, num_bytes: int
+    ) -> Sequence:
         if len(data) != 2:
             raise ValueError("data must be of length 2")
         if num_bytes not in [1, 2]:
             raise ValueError("Can only read 1 or 2 bytes at a time.")
 
-        register_address = int.from_bytes(
-            data, byteorder='big', signed=False)
+        register_address = int.from_bytes(data, byteorder="big", signed=False)
         if num_bytes == 2:
             returned = self._ask(
-                f"i2c_1_read_uint16 0x{address:02x} 0x{register_address:04x}")
+                f"i2c_1_read_uint16 0x{address:02x} 0x{register_address:04x}"
+            )
         else:
             returned = self._ask(
-                f"i2c_1_read_uint8 0x{address:02x} 0x{register_address:04x}")
+                f"i2c_1_read_uint8 0x{address:02x} 0x{register_address:04x}"
+            )
         register_data = int(returned, base=0)
         # The other I2C function has this interface
         return int.to_bytes(
-            int(register_data),
-            length=num_bytes, byteorder='big',
-            signed=False)
+            int(register_data), length=num_bytes, byteorder="big", signed=False
+        )
 
-    def i2c_1_write_payload(self, address: int, register_address: int, payload: Sequence) -> None:
+    def i2c_1_write_payload(
+        self, address: int, register_address: int, payload: Sequence
+    ) -> None:
         if Version(self.version) >= Version("0.0.14"):
-            data = ' '.join([f"0x{val:02x}" for val in payload])
+            data = " ".join([f"0x{val:02x}" for val in payload])
             cmd = f"i2c_1_write_payload 0x{address:02x} 0x{register_address:02x} {data}"
             self._ask(cmd)
 
@@ -651,43 +691,70 @@ class TeensyToAny:
             if len(payload) == 1:
                 # Trying to write the network chips
                 data = int(payload[0])
-                self._ask(
-                    f"i2c_1_write_no_register_uint8 0x{address:02x} 0x{data:02x}")
+                self._ask(f"i2c_1_write_no_register_uint8 0x{address:02x} 0x{data:02x}")
             elif len(payload) == 3:
                 # uint8
                 register_address = int.from_bytes(
-                    payload[0:2], byteorder='big', signed=False)
-                data = int.from_bytes(
-                    payload[2:3], byteorder='big', signed=False)
+                    payload[0:2], byteorder="big", signed=False
+                )
+                data = int.from_bytes(payload[2:3], byteorder="big", signed=False)
                 self._ask(
                     f"i2c_1_write_uint8 "
-                    f"0x{address:02x} 0x{register_address:04x} 0x{data:02x}")
+                    f"0x{address:02x} 0x{register_address:04x} 0x{data:02x}"
+                )
             elif len(payload) == 4:
                 register_address = int.from_bytes(
-                    payload[0:2], byteorder='big', signed=False)
-                data = int.from_bytes(
-                    payload[2:4], byteorder='big', signed=False)
+                    payload[0:2], byteorder="big", signed=False
+                )
+                data = int.from_bytes(payload[2:4], byteorder="big", signed=False)
                 self._ask(
                     f"i2c_1_write_uint16 "
-                    f"0x{address:02x} 0x{register_address:04x} 0x{data:04x}")
+                    f"0x{address:02x} 0x{register_address:04x} 0x{data:04x}"
+                )
             else:
                 raise NotImplementedError()
 
-    def i2c_1_read_payload(self, address: int, register_address: int, num_bytes: int) -> Sequence:
+    def i2c_1_read_payload(
+        self, address: int, register_address: int, num_bytes: int
+    ) -> Sequence:
         cmd = f"i2c_1_read_payload 0x{address:02x} 0x{register_address:02x} {num_bytes}"
         returned = self._ask(cmd)
-        register_data = [int(val, base=0) for val in returned.split()]  # returns big endian
+        register_data = [
+            int(val, base=0) for val in returned.split()
+        ]  # returns big endian
         return register_data
 
     def i2c_1_read_payload_no_register(self, address: int, num_bytes: int):
         cmd = f"i2c_1_read_payload_no_register 0x{address:02x} {num_bytes}"
         returned = self._ask(cmd)
-        register_data = [int(val, base=0) for val in returned.split()]  # returns big endian
+        register_data = [
+            int(val, base=0) for val in returned.split()
+        ]  # returns big endian
         return register_data
 
     def i2c_1_ping(self, address: int):
         """Return None if device found. Raises error if no device found."""
         cmd = f"i2c_1_ping 0x{address:02x}"
+        self._ask(cmd)
+
+    def i2c_1_begin_transaction(self):
+        """Begin a transaction with the I2C device. This is required before writing or
+        reading data."""
+        cmd = "i2c_1_begin_transaction"
+        self._ask(cmd)
+
+    def i2c_1_write(self, address: int, data: Sequence) -> None:
+        """Write data to the I2C device."""
+        if not isinstance(data, Sequence):
+            raise TypeError("data must be a sequence of integers")
+        data_str = " ".join([f"0x{val:02x}" for val in data])
+        cmd = f"i2c_1_write 0x{address:02x} {data_str}"
+        self._ask(cmd)
+
+    def i2c_1_end_transaction(self):
+        """End a transaction with the I2C device. This is required after writing or
+        reading data."""
+        cmd = "i2c_1_end_transaction"
         self._ask(cmd)
 
     def gpio_digital_write(self, pin, value):
@@ -757,7 +824,7 @@ class TeensyToAny:
         # We want to ensure that the command won't timeout
         # For this, we check that the pulse duration is less than
         # 80% of the time, or provide a 50 ms buffer. Whichever is bigger.
-        maximum_duration = max(self._timeout * 0.8, self._timeout - 50E-3)
+        maximum_duration = max(self._timeout * 0.8, self._timeout - 50e-3)
         if duration > maximum_duration:
             with self.increased_timeout(duration + 0.1):
                 self._ask(cmd)
@@ -848,10 +915,12 @@ class TeensyToAny:
     def spi_set_sck(self, pin):
         self._ask(f"spi_set_sck {pin}")
 
-    def spi_settings(self,
-                     frequency: int=1_000_000,
-                     bit_order: str='MSBFIRST',
-                     data_mode: str='SPI_MODE0'):
+    def spi_settings(
+        self,
+        frequency: int = 1_000_000,
+        bit_order: str = "MSBFIRST",
+        data_mode: str = "SPI_MODE0",
+    ):
         """
 
         Parameters
@@ -878,14 +947,9 @@ class TeensyToAny:
 
     def spi_transfer_bulk(self, data):
         returned = self._ask(
-            "spi_transfer_bulk " + " ".join(
-                str(d) for d in data
-            )
-        ).split(' ')
-        return [
-            int(i, base=0)
-            for i in returned
-        ]
+            "spi_transfer_bulk " + " ".join(str(d) for d in data)
+        ).split(" ")
+        return [int(i, base=0) for i in returned]
 
     def spi_read_byte(self, data):
         """Read a byte of data over SPI.
@@ -918,7 +982,7 @@ class TeensyToAny:
         self._ask(f"analog_write {pin} {value}")
 
     def analog_pulse(
-        self, pin: int, value: int, *, duration: float, value_end: int=0
+        self, pin: int, value: int, *, duration: float, value_end: int = 0
     ):
         """Pulse the analog value for a specific duration of time
 
@@ -939,7 +1003,7 @@ class TeensyToAny:
         # We want to ensure that the command won't timeout
         # For this, we check that the pulse duration is less than
         # 80% of the time, or provide a 50 ms buffer. Whichever is bigger.
-        maximum_duration = max(self._timeout * 0.8, self._timeout - 50E-3)
+        maximum_duration = max(self._timeout * 0.8, self._timeout - 50e-3)
         if duration > maximum_duration:
             with self.increased_timeout(duration + 0.1):
                 self._ask(cmd)
